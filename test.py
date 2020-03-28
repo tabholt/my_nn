@@ -17,8 +17,12 @@ weights = np.random.rand(4, 3)*2-1
 
 print(weights)
 
-my_array = np.array([-.5, .5, .5, -.5])
+my_array = np.array([-1.5, 1, .5, -.5])
 
-my_array = np.append(my_array, 1)
+my_array = np.append(my_array, 5)
+
+print(my_array)
+
+my_array = np.tanh(my_array)
 
 print(my_array)
