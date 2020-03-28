@@ -2,43 +2,45 @@ import numpy as np
 
 
 class ANN(object):
-    def __init__(self, model=None, pixel_range=[-.5, .5]):
+    def __init__(self, model, normalized_pixel_range=[-.5, .5], input_pixel_range=[np.nan, np.nan]):
         self.layers = model
         self.n_iter_train = int(1e1)
         self.n_iter_evaluate = int(1e1)
-        self.pixel_range = pixel_range
+        self.normalized_pixel_range = normalized_pixel_range
+        self.input_pixel_range = input_pixel_range
 
-    def train(self, training_set=None):
+    def train(self, training_set):
         for i in range(self.n_iter_train):
             x = next(training_set()).ravel()
-            x = self.normalize(x, pic_range=[0, 1])
+            x = self.normalize(x)
             print(x)
 
-    def evaluate(self, evaluation_set=None):
+    def evaluate(self, evaluation_set):
         for i in range(self.n_iter_evaluate):
             x = next(evaluation_set()).ravel()
-            x = self.normalize(x, pic_range=[0, 1])
+            x = self.normalize(x)
             print(x)
 
-    def normalize(self, pic, pic_range=[np.nan, np.nan]):
+    def normalize(self, pic):
         """
         Transform the input picture so that all pixel values fall 
-        between the desired pixel_range
+        between the desired normalized_pixel_range
         """
-        if np.isnan(pic_range[0]):
+        if np.isnan(self.input_pixel_range[0]):
             high = np.max(pic)
             low = np.min(pic)
             dist = high-low
         else:
-            high = pic_range[1]
-            low = pic_range[0]
+            high = self.input_pixel_range[1]
+            low = self.input_pixel_range[0]
             dist = high-low
 
         # return a vector with each value as a percentage between max and min
         pic_percent = (pic - low) / dist
         # transform the percentage vector to desired pixel range
         pic_normalized = pic_percent * \
-            (self.pixel_range[1]-self.pixel_range[0]) + self.pixel_range[0]
+            (self.normalized_pixel_range[1]-self.normalized_pixel_range[0]
+             ) + self.normalized_pixel_range[0]
 
         return pic_normalized
 
