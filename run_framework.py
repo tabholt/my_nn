@@ -5,18 +5,22 @@ import nn_framework.activation as activation
 
 input_pixel_range = [0, 1]  # range of values of input pixels
 normalized_pixel_range = [-.5, .5]  # tuning range for where to normalize input
+n_hidden_nodes = [4]
 
 training_set, evaluation_set = dat.get_data_sets()
 
 sample = next(training_set())
 n_pixels = sample.shape[0] * sample.shape[1]
-n_nodes = [n_pixels, n_pixels]
+n_nodes = [n_pixels] + n_hidden_nodes + [n_pixels]
 
-model = [layer.Desnse(
-    n_nodes[0],
-    n_nodes[1],
-    activation_function=activation.tanh
-)]
+model = []
+for i_layer in range(len(n_nodes)-1):
+    model.append(layer.Dense(
+        n_nodes[i_layer],
+        n_nodes[i_layer + 1],
+        activation.tanh
+    ))
+
 
 autoencoder = framework.ANN(
     model=model,
