@@ -10,4 +10,3 @@ n_nodes = [n_pixels, n_pixels]
 autoencoder = framework.ANN(model=None, pixel_range=[-.5, .5])
 autoencoder.train(training_set)
 autoencoder.evaluate(evaluation_set)
-
