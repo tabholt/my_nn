@@ -13,13 +13,15 @@ class ANN(object):
         for i in range(self.n_iter_train):
             x = next(training_set()).ravel()
             x = self.normalize(x)
-            print(x)
+            y = self.forward_prop(x)
+            print(y)
 
     def evaluate(self, evaluation_set):
         for i in range(self.n_iter_evaluate):
             x = next(evaluation_set()).ravel()
             x = self.normalize(x)
-            print(x)
+            y = self.forward_prop(x)
+            print(y)
 
     def normalize(self, pic):
         """
@@ -59,3 +61,9 @@ class ANN(object):
             (original_range[1]-original_range[0]) + original_range[0]
 
         return pic_normalized
+
+    def forward_prop(self, x):
+        # convert inputs into 2d array of right shape
+        y = x.ravel()[np.newaxis, :]
+        y = self.layers[0].forward_prop(y)
+        return y.ravel()

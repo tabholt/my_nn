@@ -20,3 +20,4 @@ autoencoder = framework.ANN(
 )
 autoencoder.train(training_set)
 autoencoder.evaluate(evaluation_set)
+
