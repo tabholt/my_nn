@@ -25,5 +25,7 @@ class Dense(object):
         return self.y
 
     def back_prop(self, de_dy):
-        de_dx = np.matmul(de_dy, self.weights.transpose())
+        dy_dv = self.activation_function.calc_d(self.y)
+        dv_dx = self.weights.transpose()
+        de_dx = np.matmul(de_dy * dy_dv, dv_dx)
         return de_dx[:-1]  # dont change bias node
