@@ -37,6 +37,7 @@ class ANN(object):
             rms_error = (np.mean(error**2))**.5
             self.error_history.append(rms_error)
             de_dy = self.error_function.calc_d(x, y)
+            self.back_prop(de_dy)
 
             if (i+1) % self.viz_interval == 0:
                 self.report()
@@ -103,6 +104,11 @@ class ANN(object):
         for layer in self.layers[i_layer:]:
             y = layer.forward_prop(y)
         return y.ravel()
+
+    def back_prop(self, de_dy):
+        for i_layer, layer in enumerate(reversed(self.layers)):
+            de_dx = layer.back_prop(de_dy)
+            de_dy = de_dx
 
     def report(self):
         n_bins = int(len(self.error_history)) // self.reporting_bin_size
