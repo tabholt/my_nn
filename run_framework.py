@@ -25,7 +25,7 @@ for i_layer in range(len(n_nodes)-1):
 
 autoencoder = framework.ANN(
     model=model,
-    error_function=error_fun.sqr,
+    error_function=error_fun.abs,
     normalized_pixel_range=normalized_pixel_range,
     input_pixel_range=input_pixel_range
 )
