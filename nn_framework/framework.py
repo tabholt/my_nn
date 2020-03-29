@@ -5,8 +5,9 @@ plt.switch_backend("agg")
 
 
 class ANN(object):
-    def __init__(self, model, normalized_pixel_range=[-.5, .5], input_pixel_range=[np.nan, np.nan]):
+    def __init__(self, model, error_function, normalized_pixel_range=[-.5, .5], input_pixel_range=[np.nan, np.nan]):
         self.layers = model
+        self.error_function = error_function
         self.error_history = []
         self.n_iter_train = int(1e6)
         self.n_iter_evaluate = int(1e6)
@@ -31,7 +32,10 @@ class ANN(object):
             x = next(training_set()).ravel()
             x = self.normalize(x)
             y = self.forward_prop(x)
-            self.error_history.append(1)
+            error = self.error_function.calc(x, y)
+            rms_error = (np.mean(error**2))**.5
+            self.error_history.append(rms_error)
+            de_dy = self.error_function.calc_d(x, y)
 
             if (i+1) % self.viz_interval == 0:
                 self.report()
@@ -41,7 +45,9 @@ class ANN(object):
             x = next(evaluation_set()).ravel()
             x = self.normalize(x)
             y = self.forward_prop(x)
-            self.error_history.append(1)
+            error = self.error_function.calc(x, y)
+            rms_error = np.sqrt(np.mean(error))
+            self.error_history.append(rms_error)
 
             if (i+1) % self.viz_interval == 0:
                 self.report()

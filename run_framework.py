@@ -2,6 +2,7 @@ import data_loader_two_by_two as dat
 import nn_framework.framework as framework
 import nn_framework.layer as layer
 import nn_framework.activation as activation
+import nn_framework.error_fun as error_fun
 
 input_pixel_range = [0, 1]  # range of values of input pixels
 normalized_pixel_range = [-.5, .5]  # tuning range for where to normalize input
@@ -24,6 +25,7 @@ for i_layer in range(len(n_nodes)-1):
 
 autoencoder = framework.ANN(
     model=model,
+    error_function=error_fun.sqr,
     normalized_pixel_range=normalized_pixel_range,
     input_pixel_range=input_pixel_range
 )
