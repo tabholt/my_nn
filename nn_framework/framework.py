@@ -5,9 +5,10 @@ plt.switch_backend("agg")
 
 
 class ANN(object):
-    def __init__(self, model, error_function, normalized_pixel_range=[-.5, .5], input_pixel_range=[np.nan, np.nan]):
+    def __init__(self, model, error_function, printer, normalized_pixel_range=[-.5, .5], input_pixel_range=[np.nan, np.nan]):
         self.layers = model
         self.error_function = error_function
+        self.printer = printer
         self.error_history = []
         self.n_iter_train = int(1e6)
         self.n_iter_evaluate = int(1e6)
@@ -39,6 +40,8 @@ class ANN(object):
 
             if (i+1) % self.viz_interval == 0:
                 self.report()
+                self.printer.render(
+                    self, x, name='iter_%d_vis' % (i + 1))
 
     def evaluate(self, evaluation_set):
         for i in range(self.n_iter_evaluate):
@@ -51,6 +54,8 @@ class ANN(object):
 
             if (i+1) % self.viz_interval == 0:
                 self.report()
+                self.printer.render(
+                    self, x, name='iter_%d_vis' % (i + 1))
 
     def normalize(self, pic):
         """
@@ -84,6 +89,18 @@ class ANN(object):
         # convert inputs into 2d array of right shape
         y = x.ravel()[np.newaxis, :]
         for layer in self.layers:
+            y = layer.forward_prop(y)
+        return y.ravel()
+
+    def forward_prop_to_layer(self, x, i_layer):
+        y = x.ravel()[np.newaxis, :]
+        for layer in self.layers[:i_layer]:
+            y = layer.forward_prop(y)
+        return y.ravel()
+
+    def forward_prop_from_layer(self, x, i_layer):
+        y = x.ravel()[np.newaxis, :]
+        for layer in self.layers[i_layer:]:
             y = layer.forward_prop(y)
         return y.ravel()
 
