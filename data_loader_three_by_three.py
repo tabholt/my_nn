@@ -123,13 +123,13 @@ def get_data_sets():
             index = np.random.choice(len(examples))
             yield examples[index]
 
-    def visualize_set():
-        data = np.random.permutation(examples)
-        for example in data:
-            plt.imshow(example)
-            plt.show()
+    # def visualize_set():
+    #     data = np.random.permutation(examples)
+    #     for example in data:
+    #         plt.imshow(example)
+    #         plt.show()
 
-    return training_set, evaluation_set, visualize_set
+    return training_set, evaluation_set
 
 
 # train, evalu, vizu = get_data_sets()
