@@ -7,7 +7,7 @@ import autoencoder_viz as viz
 
 input_pixel_range = [0, 1]  # range of values of input pixels
 normalized_pixel_range = [-.5, .5]  # tuning range for where to normalize input
-n_hidden_nodes = [4, 4, 2]
+n_hidden_nodes = [7, 4, 6]
 
 training_set, evaluation_set = dat.get_data_sets()
 

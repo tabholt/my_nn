@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Dense(object):
-    def __init__(self, m_inputs, n_outputs, activation_function, learning_rate=.05, initial_weight_scale=1):
+    def __init__(self, m_inputs, n_outputs, activation_function, learning_rate=.001, initial_weight_scale=1):
         self.m_inputs = int(m_inputs)
         self.n_outputs = int(n_outputs)
         self.learning_rate = learning_rate
@@ -31,7 +31,7 @@ class Dense(object):
         dy_dv = self.activation_function.calc_d(self.y)
         dy_dw = np.matmul(self.x.transpose(), dy_dv)
         de_dw = de_dy * dy_dw
-        self.weights -= de_dw
+        self.weights -= de_dw * self.learning_rate
         dv_dx = self.weights.transpose()
         de_dx = np.matmul(de_dy * dy_dv, dv_dx)
-        return de_dx[:-1]  # dont change bias node
+        return de_dx[:, :-1]  # dont change bias node
