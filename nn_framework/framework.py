@@ -5,19 +5,18 @@ plt.switch_backend("agg")
 
 
 class ANN(object):
-    def __init__(self, model, error_function, printer, normalized_pixel_range=[-.5, .5], input_pixel_range=[np.nan, np.nan]):
+    def __init__(self, model, error_function, printer, input_pixel_range=[np.nan, np.nan]):
         self.layers = model
         self.error_function = error_function
         self.printer = printer
         self.error_history = []
-        self.n_iter_train = int(1e6)
-        self.n_iter_evaluate = int(1e6)
+        self.n_iter_train = int(5e5)
+        self.n_iter_evaluate = int(2e5)
         self.viz_interval = int(1e5)
         self.reporting_bin_size = int(1e3)
         self.report_min = -3
         self.report_max = 0
 
-        self.normalized_pixel_range = normalized_pixel_range
         self.input_pixel_range = input_pixel_range
 
         self.reports_path = 'reports'
@@ -33,10 +32,9 @@ class ANN(object):
             x = next(training_set()).ravel()
             x = self.normalize(x)
             y = self.forward_prop(x)
-            error = self.error_function.calc(x, y)
-            rms_error = (np.mean(error**2))**.5
-            self.error_history.append(rms_error)
-            de_dy = self.error_function.calc_d(x, y)
+            error = self.error_function.calc(y)
+            self.error_history.append(error)
+            de_dy = self.error_function.calc_d(y)
             self.back_prop(de_dy)
 
             if (i+1) % self.viz_interval == 0:
@@ -48,10 +46,9 @@ class ANN(object):
         for i in range(self.n_iter_evaluate):
             x = next(evaluation_set()).ravel()
             x = self.normalize(x)
-            y = self.forward_prop(x)
-            error = self.error_function.calc(x, y)
-            rms_error = np.sqrt(np.mean(error))
-            self.error_history.append(rms_error)
+            y = self.forward_prop(x, evaluating=True)
+            error = self.error_function.calc(y)
+            self.error_history.append(error)
 
             if (i+1) % self.viz_interval == 0:
                 self.report()
@@ -86,12 +83,23 @@ class ANN(object):
             (original_range[1]-original_range[0]) + original_range[0]
         return pic_normalized
 
-    def forward_prop(self, x):
-        # convert inputs into 2d array of right shape
-        y = x.ravel()[np.newaxis, :]
+    def forward_pass(self, x, evaluating=False, i_start_layer=None, i_stop_layer=None):
+        if i_start_layer is None:
+            i_start_layer = 0
+        if i_stop_layer is None:
+            i_stop_layer = len(self.layers)
+        if i_stop_layer <= i_start_layer:
+            return x
+
         for layer in self.layers:
-            y = layer.forward_prop(y)
-        return y.ravel()
+            layer.reset()
+
+        self.layers[i_start_layer].x += x.ravel()[np.newaxis, :]
+
+        for layer in self.layers[i_start_layer: i_stop_layer]:
+            layer.forward_pass(evaluating=evaluating)
+
+        return layer.y.ravel()
 
     def forward_prop_to_layer(self, x, i_layer):
         y = x.ravel()[np.newaxis, :]
