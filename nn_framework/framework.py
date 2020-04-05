@@ -101,22 +101,10 @@ class ANN(object):
 
         return layer.y.ravel()
 
-    def forward_prop_to_layer(self, x, i_layer):
-        y = x.ravel()[np.newaxis, :]
-        for layer in self.layers[:i_layer]:
-            y = layer.forward_prop(y)
-        return y.ravel()
-
-    def forward_prop_from_layer(self, x, i_layer):
-        y = x.ravel()[np.newaxis, :]
-        for layer in self.layers[i_layer:]:
-            y = layer.forward_prop(y)
-        return y.ravel()
-
-    def back_prop(self, de_dy):
-        for i_layer, layer in enumerate(reversed(self.layers)):
-            de_dx = layer.back_prop(de_dy)
-            de_dy = de_dx
+    def backward_pass(self, de_dy):
+        self.layers[-1].de_dy += de_dy
+        for layer in self.layers[::-1]:
+            layer.backward_pass()
 
     def report(self):
         n_bins = int(len(self.error_history)) // self.reporting_bin_size

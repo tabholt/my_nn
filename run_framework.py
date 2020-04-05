@@ -26,22 +26,27 @@ n_nodes = [n_pixels] + n_hidden_nodes + [n_pixels]
 dropout_rates = [.2, .5]
 
 model = []
+
+model.append(layer.RangeNormalization(training_set))
+
 for i_layer in range(len(n_nodes)-1):
     new_layer = layer.Dense(
         n_nodes[i_layer],
-        n_nodes[i_layer + 1],
+        # n_nodes[i_layer + 1],
         activation.tanh,
-        dropout_rate=dropout_rates[i_layer]
+        last_layer=model[-1],
+        # dropout_rate=dropout_rates[i_layer]
     )
-    # new_layer.add_regularizer(L1())
+    new_layer.add_regularizer(L1())
     # new_layer.add_regularizer(L2())
-    new_layer.add_regularizer(Limit())
+    new_layer.add_regularizer(Limit(4))
     model.append(new_layer)
 
+model.append(layer.Difference(model[-1], model[0]))
 
 autoencoder = framework.ANN(
     model=model,
-    error_function=error_fun.abs,
+    error_function=error_fun.sqr,
     printer=printer,
     normalized_pixel_range=normalized_pixel_range,
     input_pixel_range=input_pixel_range
