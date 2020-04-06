@@ -5,95 +5,89 @@ plt.switch_backend("agg")
 
 
 class ANN(object):
-    def __init__(self, model, error_function, printer, input_pixel_range=[np.nan, np.nan]):
+    def __init__(
+        self,
+        model=None,
+        error_fun=None,
+        printer=None,
+    ):
         self.layers = model
-        self.error_function = error_function
-        self.printer = printer
+        self.error_fun = error_fun
         self.error_history = []
-        self.n_iter_train = int(5e5)
+        self.n_iter_train = int(8e5)
         self.n_iter_evaluate = int(2e5)
         self.viz_interval = int(1e5)
         self.reporting_bin_size = int(1e3)
         self.report_min = -3
         self.report_max = 0
+        self.printer = printer
 
-        self.input_pixel_range = input_pixel_range
-
-        self.reports_path = 'reports'
-        self.report_name = 'performance_history.png'
-
+        self.reports_path = "reports"
+        self.report_name = "performance_history.png"
+        # Ensure that subdirectories exist.
         try:
-            os.mkdir(self.reports_path)
-        except:
+            os.mkdir("reports")
+        except Exception:
             pass
 
     def train(self, training_set):
-        for i in range(self.n_iter_train):
+        for i_iter in range(self.n_iter_train):
             x = next(training_set()).ravel()
-            x = self.normalize(x)
-            y = self.forward_prop(x)
-            error = self.error_function.calc(y)
+            y = self.forward_pass(x)
+            error = self.error_fun.calc(y)
+            error_d = self.error_fun.calc_d(y)
             self.error_history.append(error)
-            de_dy = self.error_function.calc_d(y)
-            self.back_prop(de_dy)
+            self.backward_pass(error_d)
 
-            if (i+1) % self.viz_interval == 0:
+            if (i_iter + 1) % self.viz_interval == 0:
                 self.report()
-                self.printer.render(
-                    self, x, name='iter_%d_vis' % (i + 1))
+                self.printer.render(self, x, f"train_{i_iter + 1:08d}")
 
     def evaluate(self, evaluation_set):
-        for i in range(self.n_iter_evaluate):
+        for i_iter in range(self.n_iter_evaluate):
             x = next(evaluation_set()).ravel()
-            x = self.normalize(x)
-            y = self.forward_prop(x, evaluating=True)
-            error = self.error_function.calc(y)
+            y = self.forward_pass(x, evaluating=True)
+            error = self.error_fun.calc(y)
             self.error_history.append(error)
 
-            if (i+1) % self.viz_interval == 0:
+            if (i_iter + 1) % self.viz_interval == 0:
                 self.report()
-                self.printer.render(
-                    self, x, name='iter_%d_vis' % (i + 1))
+                self.printer.render(self, x, f"eval_{i_iter + 1:08d}")
 
-    def normalize(self, pic):
+    def forward_pass(
+        self,
+        x,
+        evaluating=False,
+        i_start_layer=None,
+        i_stop_layer=None,
+    ):
         """
-        Transform the input picture so that all pixel values fall 
-        between the desired normalized_pixel_range
+        evaluating: boolean
+            Tells whether this is an evaluation
+            (or testing, or validation) run. Some layers behave
+            a bit differently during evaluation
+        i_start_layer, i_stop_layer: int
+            Which layers to include in this forward pass?
+            Uses the python indexing convention - layer[i_stop_layer]
+            is *not* included in the pass.
+            For some purposes, like visualization, it's helpful to
+            inject activities into a layer, or pull them out from
+            a middle layer.
         """
-        if np.isnan(self.input_pixel_range[0]):
-            high = np.max(pic)
-            low = np.min(pic)
-            dist = high-low
-        else:
-            high = self.input_pixel_range[1]
-            low = self.input_pixel_range[0]
-            dist = high-low
-        pic_percent = (pic - low) / dist
-        pic_normalized = pic_percent * \
-            (self.normalized_pixel_range[1]-self.normalized_pixel_range[0]
-             ) + self.normalized_pixel_range[0]
-        return pic_normalized
-
-    def denormalize(self, pic, original_range=[0, 1]):
-        high = np.max(pic)
-        low = np.min(pic)
-        dist = high-low
-        pic_percent = (pic - low) / dist
-        pic_normalized = pic_percent * \
-            (original_range[1]-original_range[0]) + original_range[0]
-        return pic_normalized
-
-    def forward_pass(self, x, evaluating=False, i_start_layer=None, i_stop_layer=None):
         if i_start_layer is None:
             i_start_layer = 0
         if i_stop_layer is None:
             i_stop_layer = len(self.layers)
-        if i_stop_layer <= i_start_layer:
+        # Check for the case in which no layers are included in the range.
+        if i_start_layer >= i_stop_layer:
             return x
 
+        # Reset all the layers to get them ready for the new iteration.
         for layer in self.layers:
             layer.reset()
 
+        # Convert the inputs into a 2D array of the right shape
+        # and increment the inputs of the start layer.
         self.layers[i_start_layer].x += x.ravel()[np.newaxis, :]
 
         for layer in self.layers[i_start_layer: i_stop_layer]:
@@ -107,22 +101,24 @@ class ANN(object):
             layer.backward_pass()
 
     def report(self):
-        n_bins = int(len(self.error_history)) // self.reporting_bin_size
+        """
+        Create a plot of the error history.
+        """
+        n_bins = int(len(self.error_history) // self.reporting_bin_size)
         smoothed_history = []
         for i_bin in range(n_bins):
             smoothed_history.append(np.mean(self.error_history[
                 i_bin * self.reporting_bin_size:
-                (i_bin+1) * self.reporting_bin_size
+                (i_bin + 1) * self.reporting_bin_size
             ]))
-        error_history = np.log10(np.array(smoothed_history)+1e-10)
+        error_history = np.log10(np.array(smoothed_history) + 1e-10)
         ymin = np.minimum(self.report_min, np.min(error_history))
         ymax = np.maximum(self.report_max, np.max(error_history))
-
         fig = plt.figure()
         ax = plt.gca()
         ax.plot(error_history)
-        ax.set_xlabel('x%d iterations' % (self.reporting_bin_size))
-        ax.set_ylabel('log error')
+        ax.set_xlabel(f"x{self.reporting_bin_size} iterations")
+        ax.set_ylabel("log error")
         ax.set_ylim(ymin, ymax)
         ax.grid()
         fig.savefig(os.path.join(self.reports_path, self.report_name))

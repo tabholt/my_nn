@@ -1,4 +1,5 @@
-import numpy as np 
+import numpy as np
+
 
 def get_data_sets():
     """
@@ -17,7 +18,6 @@ def get_data_sets():
         new_training_example = training_generator.next()
         new_evaluation_example = evaluation_generator.next()
     """
-
     examples = [
         np.array([
             [0, 0],
@@ -86,7 +86,5 @@ def get_data_sets():
         while True:
             index = np.random.choice(len(examples))
             yield examples[index]
-    
+
     return training_set, evaluation_set
-
-
